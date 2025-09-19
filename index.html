@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VTE Prophylaxis Clinical Tool</title>
     
-    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#005a9c"/>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/005a9c/FFFFFF?text=VTE">
@@ -206,7 +205,6 @@
         <div id="progress-bar"></div>
     </div>
     <main>
-        <!-- Screen 0: Patient Info -->
         <div id="screen-info" class="screen active">
             <div class="question-box">
                 <p class="question-text">Enter Patient Demographics</p>
@@ -223,7 +221,6 @@
             </div>
         </div>
 
-        <!-- Screen 1: Contraindications -->
         <div id="screen-contraindication" class="screen">
             <div class="question-box">
                 <p class="question-text">
@@ -238,7 +235,6 @@
             </div>
         </div>
 
-        <!-- Screen 2: Active Cancer -->
         <div id="screen-cancer" class="screen">
              <div class="question-box">
                 <p class="question-text">Does the patient have Active Cancer?</p>
@@ -250,7 +246,6 @@
             </div>
         </div>
 
-        <!-- Screen 3: DOAC Exclusion -->
         <div id="screen-doac-exclusion" class="screen">
              <div class="question-box">
                 <p class="question-text">
@@ -265,9 +260,7 @@
             </div>
         </div>
         
-        <!-- Screen 4: Result -->
         <div id="screen-result" class="screen">
-            <!-- Result content will be injected here by JS -->
             <div class="button-group">
                  <button class="submit-btn" onclick="restart()">Start Over</button>
             </div>
@@ -276,7 +269,6 @@
     </main>
 </div>
 
-<!-- Modals for Info Icons -->
 <div id="modal-contraindications" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal('modal-contraindications')">&times;</span>
@@ -316,7 +308,7 @@
     // --- PWA Service Worker Registration ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
+            navigator.serviceWorker.register('./sw.js') // FIX: Changed path to be relative
                 .then(registration => console.log('ServiceWorker registration successful with scope: ', registration.scope))
                 .catch(err => console.log('ServiceWorker registration failed: ', err));
         });
@@ -407,7 +399,22 @@
 
     function handleAnswer(question, answer) {
         state.patient[question] = answer;
-        runAlgorithm();
+        
+        // FIX: Instead of calling the full algorithm, we just navigate to the next appropriate screen.
+        // The full algorithm only runs when it has enough info to produce a final result.
+        const currentScreen = state.history[state.history.length - 1];
+
+        if (currentScreen === 'screen-contraindication') {
+            if (answer === true) { // Yes, there are contraindications
+                runAlgorithm(); // This will immediately lead to the "Hold" result
+            } else { // No contraindications
+                state.history.push('screen-cancer');
+                showScreen('screen-cancer');
+            }
+        } else {
+            // For all other questions, run the algorithm because an answer should lead to a result or the next step.
+            runAlgorithm();
+        }
     }
     
     function runAlgorithm() {
@@ -482,13 +489,6 @@
             }
             return;
         }
-
-        // If no decision made, go to first question
-        if(state.history[state.history.length-1] !== 'screen-contraindication') {
-           state.history.push('screen-contraindication');
-           showScreen('screen-contraindication');
-        }
-
     }
     
     function displayResult(result) {
