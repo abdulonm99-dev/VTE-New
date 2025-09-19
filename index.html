@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VTE Prophylaxis Clinical Tool</title>
     
+    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#005a9c"/>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/005a9c/FFFFFF?text=VTE">
@@ -205,6 +206,7 @@
         <div id="progress-bar"></div>
     </div>
     <main>
+        <!-- Screen 0: Patient Info -->
         <div id="screen-info" class="screen active">
             <div class="question-box">
                 <p class="question-text">Enter Patient Demographics</p>
@@ -221,6 +223,7 @@
             </div>
         </div>
 
+        <!-- Screen 1: Contraindications -->
         <div id="screen-contraindication" class="screen">
             <div class="question-box">
                 <p class="question-text">
@@ -235,6 +238,7 @@
             </div>
         </div>
 
+        <!-- Screen 2: Active Cancer -->
         <div id="screen-cancer" class="screen">
              <div class="question-box">
                 <p class="question-text">Does the patient have Active Cancer?</p>
@@ -246,6 +250,7 @@
             </div>
         </div>
 
+        <!-- Screen 3: DOAC Exclusion -->
         <div id="screen-doac-exclusion" class="screen">
              <div class="question-box">
                 <p class="question-text">
@@ -260,15 +265,15 @@
             </div>
         </div>
         
+        <!-- Screen 4: Result -->
         <div id="screen-result" class="screen">
-            <div class="button-group">
-                 <button class="submit-btn" onclick="restart()">Start Over</button>
-            </div>
+            <!-- Result content will be injected here by JS -->
         </div>
 
     </main>
 </div>
 
+<!-- Modals for Info Icons -->
 <div id="modal-contraindications" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal('modal-contraindications')">&times;</span>
@@ -308,7 +313,7 @@
     // --- PWA Service Worker Registration ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js') // FIX: Changed path to be relative
+            navigator.serviceWorker.register('./sw.js') // FIX: Corrected path for GitHub Pages
                 .then(registration => console.log('ServiceWorker registration successful with scope: ', registration.scope))
                 .catch(err => console.log('ServiceWorker registration failed: ', err));
         });
@@ -318,11 +323,14 @@
     const state = {
         patient: {},
         history: ['screen-info'],
-        totalSteps: 4, // Info, Contra, Cancer/DOAC, Result
+        totalSteps: 4, 
     };
 
     // --- Navigation & UI ---
     function showScreen(screenId) {
+        if (!state.history.includes(screenId)) {
+            state.history.push(screenId);
+        }
         document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
         updateProgressBar();
@@ -330,8 +338,15 @@
 
     function goBack() {
         if (state.history.length > 1) {
+            // Remove current screen from history
             state.history.pop();
+            // Get the previous screen
             const lastScreen = state.history[state.history.length - 1];
+            // Clear the answers that came after the screen we are going back to
+            if(lastScreen === 'screen-info') state.patient = {};
+            if(lastScreen === 'screen-contraindication') state.patient.cancer = undefined;
+            if(lastScreen === 'screen-cancer') state.patient.doacExclusion = undefined;
+            
             showScreen(lastScreen);
         }
     }
@@ -349,12 +364,8 @@
     }
 
     // --- Modals ---
-    function showModal(modalId) {
-        document.getElementById(modalId).style.display = 'flex';
-    }
-    function closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
-    }
+    function showModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
+    function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
     window.onclick = function(event) {
         if (event.target.classList.contains('modal')) {
             event.target.style.display = 'none';
@@ -370,9 +381,7 @@
     function calculateCrCl(age, weightKg, sex, creatinineMgDl) {
         if (!age || !weightKg || !sex || !creatinineMgDl || creatinineMgDl === 0) return null;
         let crcl = ((140 - age) * weightKg) / (72 * creatinineMgDl);
-        if (sex === 'female') {
-            crcl *= 0.85;
-        }
+        if (sex === 'female') crcl *= 0.85;
         return crcl.toFixed(1);
     }
     
@@ -393,108 +402,67 @@
         state.patient.bmi = calculateBMI(weight, height);
         state.patient.crcl = calculateCrCl(age, weight, sex, creatinine);
         
-        state.history.push('screen-contraindication');
         showScreen('screen-contraindication');
     }
 
     function handleAnswer(question, answer) {
         state.patient[question] = answer;
-        
-        // FIX: Instead of calling the full algorithm, we just navigate to the next appropriate screen.
-        // The full algorithm only runs when it has enough info to produce a final result.
-        const currentScreen = state.history[state.history.length - 1];
-
-        if (currentScreen === 'screen-contraindication') {
-            if (answer === true) { // Yes, there are contraindications
-                runAlgorithm(); // This will immediately lead to the "Hold" result
-            } else { // No contraindications
-                state.history.push('screen-cancer');
-                showScreen('screen-cancer');
-            }
-        } else {
-            // For all other questions, run the algorithm because an answer should lead to a result or the next step.
-            runAlgorithm();
-        }
+        runAlgorithm(); // Always call the master algorithm function
     }
     
+    // --- COMPLETELY REWRITTEN ALGORITHM LOGIC ---
     function runAlgorithm() {
         const p = state.patient;
 
-        // Step 1: Contraindications
+        // Check Contraindications
+        if (p.contraindication === undefined) {
+            showScreen('screen-contraindication');
+            return;
+        }
         if (p.contraindication === true) {
-            displayResult({
-                title: "Anticoagulation Contraindicated",
-                status: "contraindicated",
-                recommendation: {
-                    Drug: "Mechanical Prophylaxis",
-                    Dose: "N/A",
-                    Route: "N/A",
-                    Monitoring: "Reassess contraindications in 24 hours."
-                },
-                rationale: "Patient has one or more absolute contraindications to pharmacologic VTE prophylaxis."
-            });
+            displayResult({ title: "Anticoagulation Contraindicated", status: "contraindicated", recommendation: { Drug: "Mechanical Prophylaxis", Monitoring: "Reassess contraindications in 24 hours." }, rationale: "Patient has one or more absolute contraindications to pharmacologic VTE prophylaxis." });
             return;
         }
 
-        // Step 2: Active Cancer
-        if (p.cancer === true) {
-            displayResult({
-                title: "Active Cancer Protocol",
-                status: "standard",
-                recommendation: {
-                    Drug: "LMWH (e.g., Enoxaparin)",
-                    Dose: "See institutional guidelines",
-                    Route: "SQ",
-                    Monitoring: "Prescribe a DOAC at discharge based on Khorana Score."
-                },
-                rationale: "LMWH is the preferred agent for VTE prophylaxis in most inpatients with active cancer."
-            });
+        // Check Cancer
+        if (p.cancer === undefined) {
+            showScreen('screen-cancer');
             return;
         }
-        if (p.cancer === false && state.history[state.history.length-1] !== 'screen-doac-exclusion') {
-            state.history.push('screen-doac-exclusion');
+        if (p.cancer === true) {
+            displayResult({ title: "Active Cancer Protocol", status: "standard", recommendation: { Drug: "LMWH (e.g., Enoxaparin)", Dose: "See institutional guidelines", Monitoring: "Prescribe a DOAC at discharge based on Khorana Score." }, rationale: "LMWH is the preferred agent for VTE prophylaxis in most inpatients with active cancer." });
+            return;
+        }
+
+        // Check DOAC Exclusions
+        if (p.doacExclusion === undefined) {
             showScreen('screen-doac-exclusion');
             return;
         }
-        
-        // Step 3: DOAC Exclusions
         if (p.doacExclusion === true) {
             // Enoxaparin / Heparin Pathway
             if (p.crcl < 30) {
-                // Heparin Protocol
-                if (p.bmi > 40) {
-                     displayResult({ title: "Heparin Protocol (High BMI)", status: "monitoring", recommendation: { Drug: "Heparin", Dose: "7,500 Units", Route: "SQ", Frequency: "TID", Monitoring: "Monitor for bleeding."}, rationale: "Heparin is used for severe renal impairment (CrCl < 30). Higher dose is required for BMI > 40." });
-                } else {
-                     displayResult({ title: "Heparin Protocol", status: "standard", recommendation: { Drug: "Heparin OR Enoxaparin", Dose: "5,000 Units (Heparin) OR 30mg (Enoxaparin)", Route: "SQ", Frequency: "TID (Heparin) or Daily (Enoxaparin)", Monitoring: "Monitor for bleeding."}, rationale: "Heparin or renally-dosed Enoxaparin are used for severe renal impairment (CrCl < 30)." });
-                }
+                if (p.bmi > 40) displayResult({ title: "Heparin Protocol (High BMI)", status: "monitoring", recommendation: { Drug: "Heparin", Dose: "7,500 Units", Route: "SQ", Frequency: "TID", Monitoring: "Monitor for bleeding."}, rationale: "Heparin is used for severe renal impairment (CrCl < 30). Higher dose is required for BMI > 40." });
+                else displayResult({ title: "Heparin Protocol", status: "standard", recommendation: { Drug: "Heparin OR Enoxaparin", Dose: "5,000 Units (Heparin) OR 30mg (Enoxaparin)", Route: "SQ", Frequency: "TID (Heparin) or Daily (Enoxaparin)", Monitoring: "Monitor for bleeding."}, rationale: "Heparin or renally-dosed Enoxaparin are used for severe renal impairment (CrCl < 30)." });
             } else {
-                // Enoxaparin Protocol
-                if (p.bmi < 18) {
-                    displayResult({ title: "Enoxaparin Protocol", status: "standard", recommendation: { Drug: "Enoxaparin", Dose: "30mg", Route: "SQ", Frequency: "Daily" }, rationale: "Standard dose Enoxaparin is appropriate for patients with CrCl ≥ 30 and BMI 18-40. Lower dose for underweight patients." });
-                } else if (p.bmi > 40) {
-                    displayResult({ title: "Enoxaparin Protocol (High BMI)", status: "monitoring", recommendation: { Drug: "Enoxaparin", Dose: "0.5 mg/kg (Max 100mg)", Route: "SQ", Frequency: "Daily", Monitoring: "Check Anti-Xa level 4 hours after 3rd dose (goal 0.2-0.5)." }, rationale: "Weight-based dosing and Anti-Xa monitoring are required for patients with BMI > 40 to ensure therapeutic levels." });
-                } else {
-                     displayResult({ title: "Enoxaparin Protocol", status: "standard", recommendation: { Drug: "Enoxaparin", Dose: "40mg", Route: "SQ", Frequency: "Daily" }, rationale: "Standard dose Enoxaparin is appropriate for patients with CrCl ≥ 30 and BMI 18-40." });
-                }
+                if (p.bmi < 18) displayResult({ title: "Enoxaparin Protocol", status: "standard", recommendation: { Drug: "Enoxaparin", Dose: "30mg", Route: "SQ", Frequency: "Daily" }, rationale: "Standard dose Enoxaparin is appropriate for patients with CrCl ≥ 30 and BMI 18-40. Lower dose for underweight patients." });
+                else if (p.bmi > 40) displayResult({ title: "Enoxaparin Protocol (High BMI)", status: "monitoring", recommendation: { Drug: "Enoxaparin", Dose: "0.5 mg/kg (Max 100mg)", Route: "SQ", Frequency: "Daily", Monitoring: "Check Anti-Xa level 4 hours after 3rd dose (goal 0.2-0.5)." }, rationale: "Weight-based dosing and Anti-Xa monitoring are required for patients with BMI > 40 to ensure therapeutic levels." });
+                else displayResult({ title: "Enoxaparin Protocol", status: "standard", recommendation: { Drug: "Enoxaparin", Dose: "40mg", Route: "SQ", Frequency: "Daily" }, rationale: "Standard dose Enoxaparin is appropriate for patients with CrCl ≥ 30 and BMI 18-40." });
             }
-            return;
-        }
-        
-        if (p.doacExclusion === false) {
+        } else {
             // DOAC Pathway
-            if (p.crcl < 30) {
-                displayResult({ title: "DOAC Protocol (Renal)", status: "standard", recommendation: { Drug: "Apixaban", Dose: "2.5mg", Route: "PO", Frequency: "BID" }, rationale: "Apixaban is the preferred DOAC for patients with CrCl < 30 who do not have other DOAC contraindications." });
-            } else {
-                displayResult({ title: "DOAC Protocol", status: "standard", recommendation: { Drug: "Rivaroxaban OR Apixaban", Dose: "10mg (Riva) OR 2.5mg (Apix)", Route: "PO", Frequency: "Daily (Riva) or BID (Apix)" }, rationale: "Standard dose Rivaroxaban or Apixaban are appropriate for patients with CrCl ≥ 30 and no DOAC contraindications." });
-            }
-            return;
+            if (p.crcl < 30) displayResult({ title: "DOAC Protocol (Renal)", status: "standard", recommendation: { Drug: "Apixaban", Dose: "2.5mg", Route: "PO", Frequency: "BID" }, rationale: "Apixaban is the preferred DOAC for patients with CrCl < 30 who do not have other DOAC contraindications." });
+            else displayResult({ title: "DOAC Protocol", status: "standard", recommendation: { Drug: "Rivaroxaban OR Apixaban", Dose: "10mg (Riva) OR 2.5mg (Apix)", Route: "PO", Frequency: "Daily (Riva) or BID (Apix)" }, rationale: "Standard dose Rivaroxaban or Apixaban are appropriate for patients with CrCl ≥ 30 and no DOAC contraindications." });
         }
     }
     
     function displayResult(result) {
         const resultContainer = document.getElementById('screen-result');
         let recHtml = '';
-        for (const [key, value] of Object.entries(result.recommendation)) {
+        // Add default values for cleaner display
+        const recommendation = { Drug: "N/A", Dose: "N/A", Route: "N/A", Frequency: "N/A", Monitoring: "N/A", ...result.recommendation };
+
+        for (const [key, value] of Object.entries(recommendation)) {
             recHtml += `<strong>${key}:</strong><span>${value}</span>`;
         }
         
@@ -510,11 +478,14 @@
                     </p>
                 </details>
             </div>
+            <div class="button-group">
+                 <button class="submit-btn" onclick="restart()">Start Over</button>
+            </div>
         `;
-        state.history.push('screen-result');
         showScreen('screen-result');
     }
 
 </script>
 </body>
 </html>
+
