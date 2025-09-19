@@ -1,0 +1,21 @@
+{
+"name": "VTE Prophylaxis Tool",
+"short_name": "VTE Tool",
+"start_url": ".",
+"display": "standalone",
+"background_color": "#f0f4f8",
+"theme_color": "#005a9c",
+"description": "A clinical decision support tool for VTE prophylaxis in acutely ill medical patients.",
+"icons": [
+{
+"src": "https://www.google.com/search?q=https://placehold.co/192x192/005a9c/FFFFFF%3Ftext%3DVTE",
+"sizes": "192x192",
+"type": "image/png"
+},
+{
+"src": "https://www.google.com/search?q=https://placehold.co/512x512/005a9c/FFFFFF%3Ftext%3DVTE",
+"sizes": "512x512",
+"type": "image/png"
+}
+]
+}
