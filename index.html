@@ -3,154 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTE Prophylaxis Clinical Tool</title>
+    <title>VTE Prophylaxis Tool</title>
     
-    <meta name="theme-color" content="#005a9c"/>
+    <meta name="theme-color" content="#1a202c"/>
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/005a9c/FFFFFF?text=VTE">
-
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/4A5568/FFFFFF?text=VTE">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary-color: #005a9c; --secondary-color: #f0f4f8; --accent-color-yes: #28a745;
-            --accent-color-no: #dc3545; --accent-color-warn: #ffc107; --text-color: #333;
-            --border-color: #dee2e6; --card-bg: #ffffff; --shadow: 0 4px 15px rgba(0,0,0,0.08);
+            --bg-color: #1a202c;
+            --card-color: rgba(45, 55, 72, 0.75);
+            --primary-accent: #38b2ac;
+            --text-color: #e2e8f0;
+            --text-muted: #a0aec0;
+            --border-color: rgba(74, 85, 104, 0.5);
+            --yes-color: #38a169;
+            --no-color: #e53e3e;
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
         *, *::before, *::after { box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--secondary-color); color: var(--text-color); margin: 0; padding: 15px;
-            display: flex; justify-content: center; align-items: flex-start; min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0; padding: 20px;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            background-image: radial-gradient(circle at top right, rgba(56, 178, 172, 0.1), transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(56, 178, 172, 0.1), transparent 40%);
         }
-        .container { max-width: 650px; width: 100%; background-color: var(--card-bg); border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border-color); overflow: hidden; }
-        header { background-color: var(--primary-color); color: white; padding: 15px 20px; text-align: center; }
-        header h1 { margin: 0; font-size: 1.6em; }
-        .progress-bar-container { width: 100%; background-color: #e9ecef; height: 8px; }
-        #progress-bar { width: 0%; height: 100%; background-color: var(--accent-color-yes); transition: width 0.3s ease; }
-        main { padding: 25px 30px; }
+        .container {
+            max-width: 550px; width: 100%;
+            background: var(--card-color);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        header { padding: 20px 25px; text-align: center; border-bottom: 1px solid var(--border-color); }
+        header h1 { margin: 0; font-size: 1.5em; font-weight: 700; color: white; }
+        main { padding: 30px; }
         .screen { display: none; }
-        .screen.active { display: block; animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .question-box, .summary-box { text-align: center; }
-        .question-text { font-size: 1.3em; font-weight: 500; margin-bottom: 20px; }
-        .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .input-group { display: flex; flex-direction: column; align-items: flex-start; }
-        .input-group label { font-weight: 500; margin-bottom: 5px; }
-        .input-group input, .input-group select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 1em; }
-        .input-group input.invalid-input { border-color: var(--accent-color-no); background-color: #fff8f8; }
-        .error-message { color: var(--accent-color-no); font-size: 0.85em; height: 1.2em; margin-top: 3px; }
-        .button-group { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 25px; }
-        button { padding: 12px 25px; font-size: 1em; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; color: white; min-width: 120px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        button:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-        .yes-btn { background-color: var(--accent-color-yes); }
-        .no-btn { background-color: var(--accent-color-no); }
-        .submit-btn { background-color: var(--primary-color); width: 100%; }
-        .back-btn { background-color: #6c757d; }
-        .result-card { padding: 25px; border-radius: 12px; color: var(--text-color); border: 2px solid; text-align: center; }
-        .result-card.standard { background-color: #e8f5e9; border-color: #a5d6a7; }
-        .result-card.monitoring { background-color: #fffde7; border-color: #fff59d; }
-        .result-card.contraindicated { background-color: #ffebee; border-color: #ef9a9a; }
-        .result-card h2 { margin-top: 0; font-size: 1.5em; }
-        .result-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; text-align: left; margin-top: 20px; }
-        .result-grid strong { color: var(--primary-color); }
-        .rationale { margin-top: 20px; text-align: left; }
-        .rationale summary { font-weight: bold; cursor: pointer; color: var(--primary-color); }
-        .rationale p { margin-top: 10px; padding: 10px; background-color: var(--secondary-color); border-radius: 6px; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-content { background-color: #fefefe; margin: auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 12px; }
-        .modal-content h3 { margin-top: 0; color: var(--primary-color); } .modal-content ul { padding-left: 20px; }
-        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .checklist { list-style: none; padding: 0; margin: 20px 0; text-align: left; }
-        .checklist li { margin-bottom: 15px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; }
-        .checklist h4 { margin: 0 0 10px 0; color: var(--primary-color); border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        .checklist label { display: flex; align-items: center; cursor: pointer; font-weight: 500; }
-        .checklist input { margin-right: 12px; width: 1.3em; height: 1.3em; flex-shrink: 0; }
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px 20px; text-align: left; background-color: var(--secondary-color); padding: 15px; border-radius: 8px; }
-        .summary-item strong { color: var(--primary-color); }
+        .screen.active { display: block; animation: slideIn 0.4s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        .screen-title { font-size: 1.25em; font-weight: 500; text-align: center; margin-bottom: 25px; color: white; }
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { font-size: 0.9em; margin-bottom: 8px; color: var(--text-muted); }
+        .input-group input, .input-group select {
+            width: 100%; padding: 12px; border-radius: 8px; font-size: 1em;
+            background-color: rgba(26, 32, 44, 0.8); border: 1px solid var(--border-color); color: var(--text-color);
+        }
+        .input-group input:focus { outline: none; border-color: var(--primary-accent); box-shadow: 0 0 0 2px rgba(56, 178, 172, 0.5); }
+        .button-group { display: flex; justify-content: space-between; gap: 15px; margin-top: 30px; }
+        button {
+            padding: 12px 20px; font-size: 1em; font-weight: 700; border: none;
+            border-radius: 8px; cursor: pointer; transition: all 0.2s ease; color: white;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .submit-btn { background-color: var(--primary-accent); flex-grow: 1; }
+        .back-btn { background-color: #4A5568; }
+        
+        /* Clinical Questions Styling */
+        .question-list { list-style: none; padding: 0; margin: 0; }
+        .question-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px; background-color: rgba(26, 32, 44, 0.6);
+            border-radius: 10px; margin-bottom: 12px; border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .question-item.selected-no { border-color: var(--no-color); }
+        .question-item.selected-yes { border-color: var(--yes-color); }
+        .question-item p { margin: 0; font-weight: 500; }
+        .toggle-switch { display: flex; gap: 8px; }
+        .toggle-switch button { font-size: 0.9em; padding: 8px 16px; border: 1px solid var(--border-color); background-color: transparent; }
+        .toggle-switch button.active.yes { background-color: var(--yes-color); border-color: var(--yes-color); }
+        .toggle-switch button.active.no { background-color: var(--no-color); border-color: var(--no-color); }
+
+        /* Result Screen Styling */
+        .result-card { text-align: center; }
+        .result-title { font-size: 1.8em; font-weight: 700; color: white; margin-bottom: 10px; }
+        .result-drug { font-size: 1.2em; font-weight: 500; color: var(--primary-accent); margin-bottom: 25px; }
+        .result-details {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;
+            padding: 20px; background-color: rgba(26, 32, 44, 0.6); border-radius: 10px;
+        }
+        .detail-item { }
+        .detail-item span { display: block; font-size: 0.85em; color: var(--text-muted); margin-bottom: 4px; }
+        .detail-item strong { font-size: 1em; color: var(--text-color); }
+        .rationale { margin-top: 25px; font-size: 0.9em; color: var(--text-muted); line-height: 1.5; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header><h1>VTE Prophylaxis Tool</h1></header>
-    <div class="progress-bar-container"><div id="progress-bar"></div></div>
+    <header><h1>VTE Prophylaxis Navigator</h1></header>
     <main>
         <!-- Screen 1: Demographics -->
         <div id="screen-info" class="screen active">
-            <div class="question-box">
-                <p class="question-text">Enter Patient Demographics</p>
-                <div class="input-grid">
-                    <div class="input-group"><label for="age">Age</label><input type="number" id="age" placeholder="e.g., 65"><span class="error-message" id="age-error"></span></div>
-                    <div class="input-group"><label for="weight">Weight (kg)</label><input type="number" id="weight" placeholder="e.g., 70"><span class="error-message" id="weight-error"></span></div>
-                    <div class="input-group"><label for="height">Height (cm)</label><input type="number" id="height" placeholder="e.g., 175"><span class="error-message" id="height-error"></span></div>
-                    <div class="input-group"><label for="creatinine">Serum Cr (mg/dL)</label><input type="number" id="creatinine" step="0.1" placeholder="e.g., 1.2"><span class="error-message" id="creatinine-error"></span></div>
-                    <div class="input-group"><label for="sex">Sex</label><select id="sex"><option value="male">Male</option><option value="female">Female</option></select><span class="error-message"></span></div>
-                </div>
-                <div class="button-group"><button class="submit-btn" onclick="handleSubmitInfo()">Continue</button></div>
+            <h2 class="screen-title">Patient Demographics</h2>
+            <div class="input-grid">
+                <div class="input-group"><label for="age">Age</label><input type="number" id="age" placeholder="65"></div>
+                <div class="input-group"><label for="weight">Weight (kg)</label><input type="number" id="weight" placeholder="70"></div>
+                <div class="input-group"><label for="height">Height (cm)</label><input type="number" id="height" placeholder="175"></div>
+                <div class="input-group"><label for="creatinine">Serum Cr</label><input type="number" id="creatinine" step="0.1" placeholder="1.2"></div>
             </div>
+            <div class="input-group" style="grid-column: 1 / -1;">
+                <label for="sex">Sex</label>
+                <select id="sex"><option value="male">Male</option><option value="female">Female</option></select>
+            </div>
+            <div class="button-group"><button class="submit-btn" onclick="handleSubmitInfo()">Continue</button></div>
         </div>
 
-        <!-- Screen 2: Contraindications -->
-        <div id="screen-contraindication" class="screen">
-            <div class="question-box">
-                <p class="question-text">Any Absolute Anticoagulation Contraindications?</p>
-                <div class="button-group"><button class="back-btn" onclick="goBack()">Back</button><button class="yes-btn" onclick="handleAnswer('contraindication', true)">Yes</button><button class="no-btn" onclick="handleAnswer('contraindication', false)">No</button></div>
+        <!-- Screen 2: Clinical Questions -->
+        <div id="screen-questions" class="screen">
+            <h2 class="screen-title">Clinical Factors</h2>
+            <ul class="question-list">
+                <li class="question-item" id="q-item-contraindication">
+                    <p>Contraindications to Anticoagulation?</p>
+                    <div class="toggle-switch">
+                        <button class="no-btn" onclick="toggleAnswer('contraindication', false)">No</button>
+                        <button class="yes-btn" onclick="toggleAnswer('contraindication', true)">Yes</button>
+                    </div>
+                </li>
+                <li class="question-item" id="q-item-cancer">
+                    <p>Active Cancer?</p>
+                    <div class="toggle-switch">
+                        <button class="no-btn" onclick="toggleAnswer('cancer', false)">No</button>
+                        <button class="yes-btn" onclick="toggleAnswer('cancer', true)">Yes</button>
+                    </div>
+                </li>
+                <li class="question-item" id="q-item-doacExclusion">
+                    <p>DOAC / Rivaroxaban Exclusions?</p>
+                    <div class="toggle-switch">
+                        <button class="no-btn" onclick="toggleAnswer('doacExclusion', false)">No</button>
+                        <button class="yes-btn" onclick="toggleAnswer('doacExclusion', true)">Yes</button>
+                    </div>
+                </li>
+            </ul>
+            <div class="button-group">
+                <button class="back-btn" onclick="goBack()">Back</button>
+                <button class="submit-btn" onclick="runAlgorithm()">Get Recommendation</button>
             </div>
         </div>
-
-        <!-- Screen 3: Combined Clinical Questions -->
-        <div id="screen-clinical-questions" class="screen">
-            <div class="question-box">
-                <p class="question-text">Answer the Following Clinical Questions</p>
-                <ul class="checklist">
-                    <li><h4>Bleeding Risk Factors</h4>
-                        <label><input type="checkbox" id="q-ulcer">Active Gastroduodenal Ulcer</label>
-                        <label><input type="checkbox" id="q-bleed-history">Bleeding in 3 months prior to admission</label>
-                        <label><input type="checkbox" id="q-platelets">Platelet count < 50,000/uL</label>
-                    </li>
-                    <li><h4>Clinical Status</h4>
-                         <label><input type="checkbox" id="q-cancer">Active Cancer</label>
-                         <label><input type="checkbox" id="q-icu">ICU or CCU admission</label>
-                    </li>
-                    <li><h4>DOAC / Rivaroxaban Exclusions</h4>
-                        <label><input type="checkbox" id="q-doac-exclusions">Patient has one or more DOAC exclusions</label>
-                    </li>
-                </ul>
-                <div class="button-group"><button class="back-btn" onclick="goBack()">Back</button><button class="submit-btn" onclick="handleClinicalQuestionsSubmit()">Continue to Review</button></div>
-            </div>
-        </div>
-
-        <!-- Screen 4: Summary -->
-        <div id="screen-summary" class="screen">
-            <div class="summary-box">
-                <p class="question-text">Review Patient Data</p>
-                <div id="summary-content" class="summary-grid"></div>
-                <div class="button-group"><button class="back-btn" onclick="goBack()">Back</button><button class="submit-btn" onclick="runAlgorithm()">Confirm and Get Recommendation</button></div>
-            </div>
-        </div>
-
-        <!-- Screen 5: Result -->
+        
+        <!-- Screen 3: Result -->
         <div id="screen-result" class="screen"></div>
     </main>
 </div>
 
-<!-- Modal for Contraindications -->
-<div id="modal-contraindications" class="modal"> <div class="modal-content"> <span class="close-btn" onclick="this.parentElement.parentElement.style.display='none'">&times;</span> <h3>Anticoagulation Contraindications</h3> <ul> <li>Active Bleeding</li> <li>Current Therapeutic Anticoagulation</li> <li>Platelets < 30,000/uL</li> <li>Malignant HTN / Coagulopathy / INR > 1.5</li> </ul> </div> </div>
-
 <script>
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed: ', err));
-        });
+        window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW reg failed: ', err)));
     }
 
-    const state = { patient: {}, history: ['screen-info'], totalSteps: 4 };
+    const state = { patient: {}, history: ['screen-info'] };
 
     function showScreen(screenId) {
         if (state.history[state.history.length - 1] !== screenId) state.history.push(screenId);
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
-        updateProgressBar();
     }
 
     function goBack() {
@@ -160,16 +177,9 @@
         }
     }
     
-    function updateProgressBar() {
-        const progress = Math.min(((state.history.length) / state.totalSteps) * 100, 100);
-        document.getElementById('progress-bar').style.width = `${progress}%`;
-    }
-    
     function restart() {
-        state.patient = {};
-        state.history = ['screen-info'];
-        document.querySelectorAll('input[type="number"]').forEach(i => i.value = '');
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        state.patient = {}; state.history = ['screen-info'];
+        document.querySelectorAll('input').forEach(i => i.value = '');
         showScreen('screen-info');
     }
 
@@ -180,124 +190,81 @@
         return crcl.toFixed(1);
     };
     
-    function validateInfo() {
-        let isValid = true;
-        ['age', 'weight', 'height', 'creatinine'].forEach(id => {
-            const input = document.getElementById(id);
-            const errorEl = document.getElementById(`${id}-error`);
-            if (!input.value || parseFloat(input.value) <= 0) {
-                isValid = false;
-                errorEl.textContent = 'Enter a valid positive number.';
-                input.classList.add('invalid-input');
-            } else {
-                errorEl.textContent = '';
-                input.classList.remove('invalid-input');
-            }
-        });
-        return isValid;
-    }
-
     function handleSubmitInfo() {
-        if (!validateInfo()) return;
+        // Basic validation
+        if (!document.getElementById('age').value || !document.getElementById('weight').value) {
+            alert('Please fill in all patient details.'); return;
+        }
         const patient = {
-            age: parseInt(document.getElementById('age').value),
-            weight: parseFloat(document.getElementById('weight').value),
-            height: parseFloat(document.getElementById('height').value),
-            creatinine: parseFloat(document.getElementById('creatinine').value),
+            age: parseInt(document.getElementById('age').value), weight: parseFloat(document.getElementById('weight').value),
+            height: parseFloat(document.getElementById('height').value), creatinine: parseFloat(document.getElementById('creatinine').value),
             sex: document.getElementById('sex').value,
         };
         patient.bmi = calculateBMI(patient.weight, patient.height);
         patient.crcl = calculateCrCl(patient.age, patient.weight, patient.sex, patient.creatinine);
-        state.patient = patient;
-        showScreen('screen-contraindication');
+        state.patient = {...state.patient, ...patient};
+        showScreen('screen-questions');
     }
 
-    function handleAnswer(question, answer) {
+    function toggleAnswer(question, answer) {
         state.patient[question] = answer;
-        if (question === 'contraindication') {
-            answer ? runAlgorithm() : showScreen('screen-clinical-questions');
+        const item = document.getElementById(`q-item-${question}`);
+        const buttons = item.querySelectorAll('button');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        item.classList.remove('selected-yes', 'selected-no');
+
+        if(answer) {
+            item.querySelector('.yes-btn').classList.add('active');
+            item.classList.add('selected-yes');
+        } else {
+            item.querySelector('.no-btn').classList.add('active');
+            item.classList.add('selected-no');
         }
-    }
-
-    function handleClinicalQuestionsSubmit() {
-        state.patient.cancer = document.getElementById('q-cancer').checked;
-        state.patient.doacExclusion = document.getElementById('q-doac-exclusions').checked;
-        calculateImproveScore();
-        showSummary();
-    }
-
-    function calculateImproveScore() {
-        const p = state.patient;
-        let score = 0;
-        // The IMPROVE score is validated for medically ill patients.
-        // Source: Major medical journals and clinical practice guidelines.
-        if (p.age >= 85) score += 1.5;
-        if (p.crcl < 30) score += 1;
-        if (document.getElementById('q-cancer').checked) score += 2;
-        if (document.getElementById('q-icu').checked) score += 1.5;
-        if (document.getElementById('q-ulcer').checked) score += 2.5;
-        if (document.getElementById('q-bleed-history').checked) score += 1.5;
-        if (document.getElementById('q-platelets').checked) score += 2;
-        p.bleedingScore = score;
-    }
-
-    function showSummary() {
-        const p = state.patient;
-        document.getElementById('summary-content').innerHTML = `
-            <div class="summary-item"><strong>Age:</strong> <span>${p.age}</span></div>
-            <div class="summary-item"><strong>Sex:</strong> <span>${p.sex}</span></div>
-            <div class="summary-item"><strong>BMI:</strong> <span>${p.bmi}</span></div>
-            <div class="summary-item"><strong>CrCl:</strong> <span>${p.crcl} mL/min</span></div>
-            <div class="summary-item"><strong>Contraindications:</strong> <span>${p.contraindication ? 'Yes' : 'No'}</span></div>
-            <div class="summary-item"><strong>Active Cancer:</strong> <span>${p.cancer ? 'Yes' : 'No'}</span></div>
-            <div class="summary-item"><strong>DOAC Exclusions:</strong> <span>${p.doacExclusion ? 'Yes' : 'No'}</span></div>
-            <div class="summary-item"><strong>IMPROVE Score:</strong> <span style="font-weight: bold;">${p.bleedingScore}</span></div>
-        `;
-        showScreen('screen-summary');
     }
     
     function runAlgorithm() {
+        if (state.patient.contraindication === undefined || state.patient.cancer === undefined || state.patient.doacExclusion === undefined) {
+            alert("Please answer all clinical questions."); return;
+        }
         const p = state.patient;
         let result = {};
 
         if (p.contraindication) {
-            result = { title: "Anticoagulation Contraindicated", status: "contraindicated", rec: { Drug: "Mechanical Prophylaxis", Monitoring: "Reassess contraindications in 24 hours." }, rationale: "Patient has absolute contraindications to pharmacologic prophylaxis." };
-        } else if (p.bleedingScore >= 7) {
-            result = { title: "High Bleeding Risk", status: "contraindicated", rec: { Drug: "Mechanical Prophylaxis", Monitoring: "Patient has an IMPROVE score ≥ 7. Reassess risk daily." }, rationale: "The risk of major bleeding may outweigh the benefit of pharmacologic prophylaxis." };
+            result = { title: "Anticoagulation Contraindicated", drug: "Mechanical Prophylaxis", details: { Dose: "N/A", Frequency: "Continuous", Monitoring: "Reassess in 24 hrs" }, rationale: "Patient has absolute contraindications to pharmacologic VTE prophylaxis." };
         } else if (p.cancer) {
-            result = { title: "Active Cancer Protocol", status: "standard", rec: { Drug: "LMWH (e.g., Enoxaparin)", Dose: "See institutional guidelines" }, rationale: "LMWH is preferred for VTE prophylaxis in most inpatients with active cancer." };
+            result = { title: "Standard Protocol: Active Cancer", drug: "Enoxaparin (LMWH)", details: { Dose: "See Guidelines", Frequency: "Daily", Route: "SQ" }, rationale: "LMWH is the preferred agent for VTE prophylaxis in most inpatients with active cancer." };
         } else if (p.doacExclusion) {
             if (p.crcl < 30) {
-                if (p.bmi > 40) result = { title: "Heparin Protocol (High BMI)", status: "monitoring", rec: { Drug: "Heparin", Dose: "7,500 Units SQ TID" }, rationale: "Heparin is used for severe renal impairment (CrCl < 30). Higher dose for BMI > 40." };
-                else result = { title: "Heparin Protocol", status: "standard", rec: { Drug: "Heparin 5,000 U TID or Enoxaparin 30mg Daily", Route: "SQ"}, rationale: "Heparin or renally-dosed Enoxaparin are used for severe renal impairment (CrCl < 30)." };
+                if (p.bmi > 40) result = { title: "Renal Impairment & High BMI", drug: "Heparin", details: { Dose: "7,500 Units", Frequency: "TID", Route: "SQ" }, rationale: "Heparin is used for severe renal impairment (CrCl < 30). Higher dose is required for BMI > 40." };
+                else result = { title: "Standard Protocol: Renal Impairment", drug: "Heparin or Enoxaparin", details: { Dose: "5,000 U (Hep) / 30mg (Enox)", Frequency: "TID / Daily", Route: "SQ" }, rationale: "Heparin or renally-dosed Enoxaparin are used for severe renal impairment (CrCl < 30)." };
             } else {
-                if (p.bmi > 40) result = { title: "Enoxaparin Protocol (High BMI)", status: "monitoring", rec: { Drug: "Enoxaparin", Dose: "0.5 mg/kg Daily", Monitoring: "Check Anti-Xa level after 3rd dose (goal 0.2-0.5)." }, rationale: "Weight-based dosing and Anti-Xa monitoring are required for patients with BMI > 40." };
-                else result = { title: "Enoxaparin Protocol", status: "standard", rec: { Drug: "Enoxaparin", Dose: p.bmi < 18 ? "30mg SQ Daily" : "40mg SQ Daily" }, rationale: "Standard dose Enoxaparin is appropriate for CrCl ≥ 30 and BMI 18-40." };
+                if (p.bmi > 40) result = { title: "Standard Protocol: High BMI", drug: "Enoxaparin", details: { Dose: "0.5 mg/kg", Frequency: "Daily", Monitoring: "Consider Anti-Xa" }, rationale: "Weight-based dosing is required for patients with BMI > 40." };
+                else result = { title: "Standard Protocol", drug: "Enoxaparin", details: { Dose: p.bmi < 18 ? "30mg" : "40mg", Frequency: "Daily", Route: "SQ" }, rationale: "Standard dose Enoxaparin is appropriate for patients with CrCl ≥ 30 and BMI 18-40." };
             }
-        } else { // No DOAC Exclusions, Preferred Pathway
-            if (p.crcl < 30) result = { title: "DOAC Protocol (Renal)", status: "standard", rec: { Drug: "Apixaban", Dose: "2.5mg PO BID" }, rationale: "Apixaban is the preferred DOAC for patients with CrCl < 30 without other DOAC contraindications." };
-            else result = { title: "DOAC Protocol", status: "standard", rec: { Drug: "Rivaroxaban 10mg Daily OR Apixaban 2.5mg BID", Route: "PO" }, rationale: "Standard dose Rivaroxaban or Apixaban are appropriate for patients with CrCl ≥ 30." };
+        } else { // DOAC Preferred Pathway
+            if (p.crcl < 30) result = { title: "Preferred Protocol: Renal", drug: "Apixaban", details: { Dose: "2.5mg", Frequency: "BID", Route: "PO" }, rationale: "Apixaban is the preferred DOAC for patients with CrCl < 30 who do not have other DOAC contraindications." };
+            else result = { title: "Preferred Protocol", drug: "Rivaroxaban or Apixaban", details: { Dose: "10mg (Riva) / 2.5mg (Apix)", Frequency: "Daily / BID", Route: "PO" }, rationale: "Standard dose Rivaroxaban or Apixaban are appropriate for patients with CrCl ≥ 30." };
         }
         displayResult(result);
     }
     
     function displayResult(result) {
-        let recHtml = '';
-        for (const [key, value] of Object.entries(result.rec)) {
-            recHtml += `<strong>${key}:</strong><span>${value}</span>`;
+        const resultContainer = document.getElementById('screen-result');
+        let detailsHtml = '';
+        for (const [key, value] of Object.entries(result.details)) {
+            detailsHtml += `<div class="detail-item"><span>${key}</span><strong>${value}</strong></div>`;
         }
-        
-        document.getElementById('screen-result').innerHTML = `
-            <div class="result-card ${result.status}">
-                <h2>${result.title}</h2>
-                <div class="result-grid">${recHtml}</div>
-                <details class="rationale">
-                    <summary>View Rationale & Data</summary>
-                    <p>${result.rationale}<br><br>
-                    <i><b>Data Used:</b> BMI: ${state.patient.bmi}, CrCl: ${state.patient.crcl} mL/min, IMPROVE Score: ${state.patient.bleedingScore}</i></p>
-                </details>
+
+        resultContainer.innerHTML = `
+            <div class="result-card">
+                <h2 class="result-title">${result.title}</h2>
+                <p class="result-drug">${result.drug}</p>
+                <div class="result-details">${detailsHtml}</div>
+                <p class="rationale">${result.rationale}<br><br><i>Calculated BMI: ${state.patient.bmi} | CrCl: ${state.patient.crcl} mL/min</i></p>
+                <div class="button-group">
+                     <button class="submit-btn" onclick="restart()">Start Over</button>
+                </div>
             </div>
-            <div class="button-group"><button class="submit-btn" onclick="restart()">Start Over</button></div>
         `;
         showScreen('screen-result');
     }
